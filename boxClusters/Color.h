@@ -1,19 +1,21 @@
 #include <stdint.h>
 #include <math.h>
 
+#define ATTRACT_MODE_SPEED    (5.0)
+
 #define lerp(a,b,v)    ((a) + ((b) - (a)) * (v))
 
 #ifndef randf
 #define randf()    (random(0xffffff) * (1.0f / 0xffffff))
 #endif
-//For TX: need to speed up animations to account for added LEDs per unit. 
+//For TX: need to speed up animations to account for added LEDs per unit.
 // From PWLF: Stations should be arranged in this order (as viewed from inside the arc, facing out):
 //
 //              6,7
 //             -----
 //      2,3/    4,5     \10,11
-//        /0,1        8,9\
-//       /                \
+//        /0,1        8,9\.
+//       /                \.
 
 /*
 const uint8_t PROGMEM gamma8[] = {
@@ -155,7 +157,7 @@ float attractDiagonal(uint8_t cluster, uint8_t box, float elapsed)
 	}
 
 	//uint8_t step = (box <= 3) ? (box * 2) : ((7 - box) * 2 + 1);  // zip zag
-	const uint8_t ar[] = {0,5,2,7, 3,6,1,4};
+	const uint8_t ar[] = {0,3,6,1, 4,7,2,5};
 	uint8_t step = ar[box];
 
 	float saw = (step / 8.0f) + elapsed;
@@ -165,19 +167,19 @@ float attractDiagonal(uint8_t cluster, uint8_t box, float elapsed)
 float attractWalk(uint8_t box, float elapsed)
 {
 	//uint8_t step = (box <= 3) ? (box * 2) : ((7 - box) * 2 + 1);  // zip zag
-	const uint8_t ar[] = {0,3,4,7,6,5,2,1};
+	const uint8_t ar[] = {0,1,2,3,4,5,6,7};
 	uint8_t step = ar[box];
 
 	float saw = (step / 8.0f) + elapsed;
 	return saw - floor(saw);
 }
 
-bool isClusterDrums(uint8_t cluster) {
-	return (cluster == 0) || (cluster == 1);
+bool isAnimDrums(uint8_t animType) {
+	return (animType == 0);
 }
 
-void boxColorWasHit(uint8_t cluster, uint8_t box) {
-	if (isClusterDrums(cluster)) {
+void boxColorWasHit(uint8_t cluster, uint8_t animType, uint8_t box) {
+	if (isAnimDrums(animType)) {
 		bool greenish = (random(999) % 2);
 
 		// Pick a warm hue
@@ -195,22 +197,16 @@ void boxColorWasHit(uint8_t cluster, uint8_t box) {
 			s = lerp(0.7f, 0.9f, randf());
 		}
 
-		uint8_t squares[] = {0,1,6,7, 2,3,4,5};
-		bool isSquare0 = (box <= 1) || (box >= 6);
-
-		for (uint8_t i = 0; i < 4; i++) {
-			uint8_t target = squares[i + (isSquare0 ? 0 : 4)];
-			cells[target] = (HSV){
-				.h = h,
-				.s = (target == box) ? (s * 0.5f) : s,
-				.v = (target == box) ? 1.0f : (greenish ? 0.55f : 0.6f)
-			};
-		}
+		cells[box] = (HSV){
+			.h = h,
+			.s = s * 0.5f,
+			.v = 1.0f
+		};
 	}
 }
 
-void boxColorsWillUpdate(uint8_t cluster, float elapsed, float attractor) {
-	if (isClusterDrums(cluster)) {
+void boxColorsWillUpdate(uint8_t cluster, uint8_t animType, float elapsed, float attractor) {
+	if (isAnimDrums(animType)) {
 
 		const float DECAY = 0.05f; //.003f
 
@@ -226,7 +222,7 @@ void boxColorsWillUpdate(uint8_t cluster, float elapsed, float attractor) {
 // bright:     Decaying envelope, triggered by piezo hit. No hits == 0.
 // elapsed:    Global elapsed time, in seconds.
 // attractor:  0..1 value indicating if the attractor is being shown.
-RGB boxColor(uint8_t cluster, uint8_t box, HSV * rando, float bright, float elapsed, float attractor)
+RGB boxColor(uint8_t cluster, uint8_t animType, uint8_t box, HSV * rando, float bright, float elapsed, float attractor)
 {
 	//cluster = 99;	// DEBUG
 
@@ -234,10 +230,9 @@ RGB boxColor(uint8_t cluster, uint8_t box, HSV * rando, float bright, float elap
 	RGB rgbActive = {.r = 0, .g = 0, .b = 0};
 	RGB rgbAttractor = {.r = 0, .g = 0, .b = 0};
 
-	switch (cluster) {
+	switch (animType) {
 
 		case 0:
-		case 1:
 		{
 			//
 			//  2x2 drum pads
@@ -255,7 +250,7 @@ RGB boxColor(uint8_t cluster, uint8_t box, HSV * rando, float bright, float elap
 			// Slow walk?
 			rgbAttractor = (RGB){.r = 0, .g = 0, .b = 0};
 			if (hsv->v <= 0.0f) {
-				float walk = attractWalk(box, elapsed * 0.45f);
+				float walk = attractWalk(box, elapsed * 0.45f * ATTRACT_MODE_SPEED);
 				walk = saturate(walk * 2.0f - 1.0f);
 				walk = tri(walk, 0.2f);
 				walk = easeSine(walk);
@@ -267,8 +262,7 @@ RGB boxColor(uint8_t cluster, uint8_t box, HSV * rando, float bright, float elap
 		}
 		break;
 
-		case 2:
-		case 3:
+		case 1:
 		{
 			//
 			//  Washed out (white -> fade to pastels)
@@ -278,7 +272,7 @@ RGB boxColor(uint8_t cluster, uint8_t box, HSV * rando, float bright, float elap
 			// Attractor
 			float attractHue = (elapsed / 40.0f) + (box ^ 0b11) * 0.08f;
 
-			float wave = attractDiagonal(cluster, box, elapsed / 4.0f);
+			float wave = attractDiagonal(cluster, box, (elapsed / 4.0f) * ATTRACT_MODE_SPEED);
 			wave = saturate(wave * 2.0f - 1.0f);
 			wave = tri(wave, 0.05f);
 			wave = easeSine(wave);
@@ -290,24 +284,7 @@ RGB boxColor(uint8_t cluster, uint8_t box, HSV * rando, float bright, float elap
 		}
 		break;
 
-		default:
-		{
-			// Debug: Shows the box order
-			RGB attract = (RGB){
-				.r = (box & 0x1) ? 1.0f : 0.0f,
-				.g = (box & 0x2) ? 1.0f : 0.0f,
-				.b = (box & 0x4) ? 1.0f : 0.0f
-			};
-
-			// Active: Show a rainbow
-			RGB active = hsv2rgb(elapsed * 0.2f, 1.0f, 1.0f);
-
-			return lerpRGB(&attract, &active, bright);
-		}
-		break;
-
-		case 4:
-		case 5:
+		case 2:
 		{
 			//
 			//  80's sweater: Lime green, cyan, dark blue, magenta
@@ -355,7 +332,7 @@ RGB boxColor(uint8_t cluster, uint8_t box, HSV * rando, float bright, float elap
 			float ch = cos(elapsedRando + (box ^ 57));
 			float attractHue = 0.85f + (ch * ch) * 0.09f;  // green towards blue
 
-			float wave = attractDiagonal(cluster, box, elapsed / 4.0f);
+			float wave = attractDiagonal(cluster, box, (elapsed / 4.0f) * ATTRACT_MODE_SPEED);
 			wave = saturate(wave * 2.0f - 1.0f);
 			wave = tri(wave, 0.05f);
 			wave = easeSine(wave);
@@ -371,8 +348,7 @@ RGB boxColor(uint8_t cluster, uint8_t box, HSV * rando, float bright, float elap
 		}
 		break;
 
-		case 6:
-		case 7:
+		case 3:
 		{
 			//
 			//  Fast rainbow-
@@ -397,7 +373,7 @@ RGB boxColor(uint8_t cluster, uint8_t box, HSV * rando, float bright, float elap
 			*/
 
 			// Slow walk?
-			float walk = attractWalk(box, elapsed * 0.42f);
+			float walk = attractWalk(box, elapsed * 0.42f * ATTRACT_MODE_SPEED);
 			walk = saturate(walk * 2.0f - 1.0f);
 			walk = tri(walk, 0.2f);
 			walk = easeSine(walk);
@@ -415,8 +391,7 @@ RGB boxColor(uint8_t cluster, uint8_t box, HSV * rando, float bright, float elap
 		}
 		break;
 
-		case 8:
-		case 9:
+		case 4:
 		{
 			//
 			//  Slow rainbow with glowing white LFO
@@ -440,7 +415,7 @@ RGB boxColor(uint8_t cluster, uint8_t box, HSV * rando, float bright, float elap
 			// Attractor
 			float attractHue = h + (box ^ 0b11) * 0.08f;
 
-			float wave = attractDiagonal(cluster, box, elapsed / 4.0f);
+			float wave = attractDiagonal(cluster, box, (elapsed / 4.0f) * ATTRACT_MODE_SPEED);
 			wave = saturate(wave * 2.0f - 1.0f);
 			wave = tri(wave, 0.15f);
 			wave = easeSine(wave);
@@ -452,8 +427,7 @@ RGB boxColor(uint8_t cluster, uint8_t box, HSV * rando, float bright, float elap
 		}
 		break;
 
-		case 10:
-		case 11:
+		case 5:
 		{
 			//
 			//  Red/orange/yellow fire and lava.
@@ -483,6 +457,7 @@ RGB boxColor(uint8_t cluster, uint8_t box, HSV * rando, float bright, float elap
 			// Lava should always be active.
 			if (cluster & 0x1) elapsed -= 668.0f;	// the neighbor of the beast
 			float timeGnar = (cluster & 0x1) ? 135.2f : 139.0f;
+			timeGnar *= ATTRACT_MODE_SPEED;
 			uint8_t boxGnar = (box ^ 37);
 			float p2 = boxGnar * timeGnar + elapsed * 4.2f;
 
@@ -498,6 +473,22 @@ RGB boxColor(uint8_t cluster, uint8_t box, HSV * rando, float bright, float elap
 			);
 
 			return addRGBclamped(&rgbActive, &rgbAttractor);
+		}
+		break;
+
+		default:
+		{
+			// Debug: Shows the box order
+			RGB attract = (RGB){
+				.r = (box & 0x1) ? 1.0f : 0.0f,
+				.g = (box & 0x2) ? 1.0f : 0.0f,
+				.b = (box & 0x4) ? 1.0f : 0.0f
+			};
+
+			// Active: Show a rainbow
+			RGB active = hsv2rgb(elapsed * 0.2f, 1.0f, 1.0f);
+
+			return lerpRGB(&attract, &active, bright);
 		}
 		break;
 

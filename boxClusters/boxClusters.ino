@@ -1,11 +1,20 @@
-//TX version: 7 sensors per board, 4 boards controlling 28 keys, sending serial to WAV trigger.  All unused piezo inputs grounded out.  
+//TX version: 7 sensors per board, 4 boards controlling 28 keys, sending serial to WAV trigger.  All unused piezo inputs grounded out.
 //Need to understand how to speed up and slow down animations, as well as how to modify code to work with the 7 sensors and to create a seamless animation.
 //(right now, when you tap one, it has a ripple effect that makes the boxes next to it light up temporarily.  This does not appear to be seamless between the boards.
 //I have left ?? comments next to the lines I have been working on.
 
 
-// MODIFY THIS when flashing Arduinos:
+// MODIFY THESE when flashing Arduinos:
 #define boxClusterNumber (1)
+#define animationType    (2)  // Range is [0...5]
+
+// Animation types:
+//      0 == Purple drum pads
+//      1 == Washed out (white -> fade to pastels)
+//      2 == 80's sweater
+//      3 == Fast rainbow
+//      4 == Slow rainbow, white pulsar
+//      5 == Lava
 
 // Cluster count:
 #define CLUSTERS  (12)
@@ -34,8 +43,11 @@
 //#define ATTRACTOR_HIDE_TIME           (4.5f)
 //#define ATTRACTOR_FADE_IN_TIME        (3.5f)
 #define ATTRACTOR_FADE_OUT_TIME       (0.3f) // how quickly the animation fades out after being triggered
-#define ATTRACTOR_HIDE_TIME           (0.3f)  // amount of time the animation waits before coming back in ?? 
+#define ATTRACTOR_HIDE_TIME           (0.3f)  // amount of time the animation waits before coming back in ??
 #define ATTRACTOR_FADE_IN_TIME        (0.7f)  //how long it takes to fade back in.  Speed of animations are controlled in color.h
+
+// When hit: Effects fade out at this rate:
+#define BRIGHTNESS_DECAY_RATE    (200.0f)   // Lower == faster decay
 
 //uint16_t ledArray[]={0,15,30,45,60,75,90,105};  // PWLF boxes
 uint16_t ledArray[]={0,62,122,182,242,302,362,431};  //for TX final designed board: this specifies the number of LEDs in each strip.
@@ -46,7 +58,7 @@ Adafruit_NeoPixel strip = Adafruit_NeoPixel(ledArray[BOXES], PIN, NEO_GRB + NEO_
 
 // this fixes all the piezo locations for each box. They were randomly connected and have to be asigned to the correct box
 int box[CLUSTERS][BOXES] = {
-  {0,1,2,3,6,7,8}, //cluster 0  ground out pin 9, just to keep code logic straight
+  {2,1,0,9,8,7,6}, //cluster 0  ground out pin 9, just to keep code logic straight
   {2,1,0,9,8,7,6},  //cluster 1  //only 4 boards used in the TX version.  will ground out pin 9 ??
   {0,1,2,3,6,7,8},  //cluster 2
   {0,1,2,3,6,7,8},  //cluster 3
@@ -63,7 +75,7 @@ int box[CLUSTERS][BOXES] = {
 // Default hit thresholds
 #define HT0     ( 70)
 #define HT1     ( 70)
-#define HT2     ( 70) 
+#define HT2     ( 70)
 #define HT3     ( 70)
 #define HT4     ( 70)
 #define HT5     ( 70)
@@ -146,11 +158,11 @@ void loop() {
 
 	// For each box: Dim the colors according to the brights.
 	// Update each LED color.
-	boxColorsWillUpdate(boxClusterNumber, elapsed, attractor);
+	boxColorsWillUpdate(boxClusterNumber, animationType, elapsed, attractor);
 
 	for (uint8_t box = 0; box < BOXES; box++) {
 		// Get the box color. See: Color.h
-		RGB rgb = boxColor(boxClusterNumber, box, &hsvRandoms[box], brights[box], elapsed, attractor);
+		RGB rgb = boxColor(boxClusterNumber, animationType, box, &hsvRandoms[box], brights[box], elapsed, attractor);
 
 		RGB8 rgb8 = rgbToRGB8(rgb);
 
@@ -176,7 +188,7 @@ void loop() {
     }
 
 		// Decay brightness
-		brights[box] = max(0.0f, brights[box] - (1.0f / 2000.0f));
+		brights[box] = max(0.0f, brights[box] - (1.0f / BRIGHTNESS_DECAY_RATE));
 	}
 
 	strip.show();
@@ -262,7 +274,7 @@ void startBoxAnimation(uint8_t b) {
 	hsvRandoms[b] = (HSV){.h = randf(), .s = randf(), .v = randf()};
 	brights[b] = 1.0f;  // Start at full brightness
 
-	boxColorWasHit(boxClusterNumber, b);
+	boxColorWasHit(boxClusterNumber, animationType, b);
 }
 
 
