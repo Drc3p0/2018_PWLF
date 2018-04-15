@@ -1,6 +1,10 @@
 
 /*
 changed from teensy to lenoardo: https://www.arduino.cc/en/Tutorial/MidiDevice
+Info about wavtrigger serial ports with the Micro:
+https://github.com/robertsonics/WAV-Trigger-Arduino-Serial-Library
+https://arduino.stackexchange.com/questions/1471/arduino-pro-micro-get-data-out-of-tx-pin
+
 */
 
 #include "PitchToNote.h"
@@ -8,11 +12,10 @@ changed from teensy to lenoardo: https://www.arduino.cc/en/Tutorial/MidiDevice
 #include "MIDIUSB.h" //for lenoardo
 
 //added Wav info:
-#include <AltSoftSerial.h>    // edited out softSerial... I think
+//commented out wav trigger in wavTrigger.h
+//#include <AltSoftSerial.h>    // edited out softSerial... I think
 #include <wavTrigger.h>  //https://github.com/robertsonics/WAV-Trigger-Arduino-Serial-Library
 wavTrigger wTrig;             // Our WAV Trigger object
-//#elif defined(ARDUINO_AVR_YUN) || defined(ARDUINO_AVR_LEONARDO) || defined(__AVR_ATmega32U4__)
-  #define OUTPUT_COMPARE_A_PIN    5 // transmit
 
 #define BAUD_RATE  (115200)
 
@@ -83,7 +86,9 @@ void loop() {
 
     //Serial.println(boxNumber);
     //Serial.println(pixelNumber);
+    Serial1.println(pitch);
     Serial.println(pitch);
+
 
 //Wav info:
  wTrig.trackGain(1, 0);                 //sets track 1 gain
