@@ -83,10 +83,10 @@ void loop() {
     Serial.println(boxNumber);
     Serial.println(pixelNumber);
     Serial.print("pitch: ");
-    Serial.println(pitch);
+    Serial.println(pitch - 7);
     
     wTrig.trackGain(1, 0);                 //sets track 1 gain
-    wTrig.trackPlayPoly(pitch);
+    wTrig.trackPlayPoly(pitch - 7);
 
 // First parameter is the event type (0x09 = note on, 0x08 = note off).
 // Second parameter is note-on/note-off, combined with the channel.

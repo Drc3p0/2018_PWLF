@@ -5,7 +5,7 @@
 
 
 // MODIFY THESE when flashing Arduinos:
-#define boxClusterNumber (1)
+#define boxClusterNumber (3)
 #define animationType    (2)  // Range is [0...5]
 
 // Animation types:
@@ -61,16 +61,16 @@ Adafruit_NeoPixel strip = Adafruit_NeoPixel(ledArray[BOXES], PIN, NEO_GRB + NEO_
 int box[CLUSTERS][BOXES] = {
   {3,2,1,0,9,8,7}, //cluster 0  ground out pin 9, just to keep code logic straight
   {3,2,1,0,9,8,7},  //cluster 1  //only 4 boards used in the TX version.  will ground out pin 9 ??
-  {0,1,2,3,9,8,7},  //cluster 2
-  {0,1,2,3,9,8,7},  //cluster 3
-  {0,1,2,3,9,8,7},  //cluster 4
-  {0,1,2,3,9,8,7},  //cluster 5  //should I comment out the unused boards/hit values/etc.?  or just leave it be.. ??
-  {0,1,2,3,9,8,7},  //cluster 6
-  {0,1,2,3,9,8,7},  //cluster 7
-  {0,1,2,3,6,7,8},  //cluster 8
-  {0,1,2,3,6,7,8},  //cluster 9
-  {0,1,2,3,6,7,8},  //cluster 10
-  {0,1,2,3,6,7,8}   //cluster 11
+  {3,2,1,0,9,8,7},  //cluster 2
+  {3,2,1,0,9,8,7},  //cluster 3
+  {3,2,1,0,9,8,7},  //cluster 4
+  {3,2,1,0,9,8,7},  //cluster 5  //should I comment out the unused boards/hit values/etc.?  or just leave it be.. ??
+  {3,2,1,0,9,8,7},  //cluster 6
+  {3,2,1,0,9,8,7},  //cluster 7
+  {3,2,1,0,6,7,8},  //cluster 8
+  {3,2,1,0,6,7,8},  //cluster 9
+  {3,2,1,0,6,7,8},  //cluster 10
+  {3,2,1,0,6,7,8}   //cluster 11
 };
 
 // Default hit thresholds
