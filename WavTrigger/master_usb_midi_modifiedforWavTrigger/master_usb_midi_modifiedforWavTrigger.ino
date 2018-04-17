@@ -1,23 +1,19 @@
 
 /*
 changed from teensy to lenoardo: https://www.arduino.cc/en/Tutorial/MidiDevice
-Info about wavtrigger serial ports with the Micro:
-https://github.com/robertsonics/WAV-Trigger-Arduino-Serial-Library
-https://arduino.stackexchange.com/questions/1471/arduino-pro-micro-get-data-out-of-tx-pin
-
 */
 
 #include "PitchToNote.h"
 
 #include "MIDIUSB.h" //for lenoardo
 
-//added Wav info:
-//commented out wav trigger in wavTrigger.h
-//#include <AltSoftSerial.h>    // edited out softSerial... I think
 #include <wavTrigger.h>  //https://github.com/robertsonics/WAV-Trigger-Arduino-Serial-Library
 wavTrigger wTrig;             // Our WAV Trigger object
 
-#define BAUD_RATE  (115200)
+
+
+
+#define BAUD_RATE  (57600)
 
 const int MAX_LEN = 10;
 const char lineEnding = '\n'; // whatever marks the end of your input.
@@ -32,14 +28,13 @@ enum indexName {box, pixel};
 #define PRINT_ITEM(x) printItem (x, #x)
 
 // Box->pitch order can be changed here:
-const byte notePitches[7] = {0, 1, 2, 3, 4, 5, 6}; // was [8] and 0-7
+const byte notePitches[8] = {0, 1, 2, 3, 4, 5, 6, 7};
 
 
 int inByte = 0;
 int lastInByte = 0;
 
 void setup() {
-
 
   pinMode(5,OUTPUT);   //receive / transmit pin... pull low to receive for Master
   digitalWrite(5, LOW);
@@ -58,6 +53,7 @@ void setup() {
   //  hurt to do this.
   wTrig.stopAllTracks();
 
+  Serial.println("are you here");
   
 }
 
@@ -82,19 +78,28 @@ void loop() {
 
     int boxNumber = atoi(tokens[0]) - 10;
     int pixelNumber = atoi(tokens[1]);
-    byte pitch = (boxNumber * 7) + notePitches[pixelNumber]; //was * 8
+    int pitch = (boxNumber * 8) + notePitches[pixelNumber];
 
-    //Serial.println(boxNumber);
-    //Serial.println(pixelNumber);
-    Serial1.println(pitch);
+    Serial.println(boxNumber);
+    Serial.println(pixelNumber);
+    Serial.print("pitch: ");
     Serial.println(pitch);
+    
+    wTrig.trackGain(1, 0);                 //sets track 1 gain
+    wTrig.trackPlayPoly(pitch);
+
+// First parameter is the event type (0x09 = note on, 0x08 = note off).
+// Second parameter is note-on/note-off, combined with the channel.
+// Channel can be anything between 0-15. Typically reported to the user as 1-16.
+// Third parameter is the note number (48 = middle C).
+// Fourth parameter is the velocity (64 = normal, 127 = fastest).
 
 
-//Wav info:
- wTrig.trackGain(1, 0);                 //sets track 1 gain
- wTrig.trackPlayPoly(pitch);  // Start Track 1 poly
+  midiEventPacket_t noteOn = {0x09, 0x90 | 0, pitch, 99}; //added for lenoardo
+  MidiUSB.sendMIDI(noteOn); //added for leonardo
+  MidiUSB.flush();
 
-
+    //usbMIDI.sendNoteOn(pitch, 99, 1);  //for teensy
 
    // reset things for the next lot.
    newInput = false;
@@ -110,7 +115,7 @@ void serialEvent ()  // build the input string.
  while (Serial1.available() ) //read from hardware serial
  {
    char readChar = Serial1.read ();
-  // Serial.println(readChar);
+   Serial.println(readChar);
    if (readChar == lineEnding)
    {
      newInput = true;
@@ -128,9 +133,7 @@ void serialEvent ()  // build the input string.
 
 void printItem (int index, char* name)
 {
- //Serial.print (name);
- //Serial.print (F(" "));
- //Serial.println (tokens [index]);
- //Serial.println (index);
-
+ Serial.print (name);
+ Serial.print (F(" "));
+ Serial.println (tokens [index]);
 }

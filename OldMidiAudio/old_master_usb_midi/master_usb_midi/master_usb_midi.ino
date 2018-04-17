@@ -7,7 +7,13 @@ changed from teensy to lenoardo: https://www.arduino.cc/en/Tutorial/MidiDevice
 
 #include "MIDIUSB.h" //for lenoardo
 
-#define BAUD_RATE  (115200)
+#include <wavTrigger.h>  //https://github.com/robertsonics/WAV-Trigger-Arduino-Serial-Library
+wavTrigger wTrig;             // Our WAV Trigger object
+
+
+
+
+#define BAUD_RATE  (57600)
 
 const int MAX_LEN = 10;
 const char lineEnding = '\n'; // whatever marks the end of your input.
@@ -36,6 +42,19 @@ void setup() {
   // initialize both serial ports:
   Serial.begin(BAUD_RATE);
   Serial1.begin(BAUD_RATE);
+
+//Wav info:
+  wTrig.start();   // WAV Trigger startup at 57600
+    // If the Uno is powering the WAV Trigger, we should wait for the WAV Trigger
+  //  to finish reset before trying to send commands.
+  delay(1000);
+  // If we're not powering the WAV Trigger, send a stop-all command in case it
+  //  was already playing tracks. If we are powering the WAV Trigger, it doesn't
+  //  hurt to do this.
+  wTrig.stopAllTracks();
+
+  Serial.println("are you here");
+  
 }
 
 void loop() {
@@ -59,11 +78,15 @@ void loop() {
 
     int boxNumber = atoi(tokens[0]) - 10;
     int pixelNumber = atoi(tokens[1]);
-    byte pitch = (boxNumber * 8) + notePitches[pixelNumber];
+    int pitch = (boxNumber * 8) + notePitches[pixelNumber];
 
     Serial.println(boxNumber);
     Serial.println(pixelNumber);
+    Serial.print("pitch: ");
     Serial.println(pitch);
+    
+    wTrig.trackGain(1, 0);                 //sets track 1 gain
+    wTrig.trackPlayPoly(pitch);
 
 // First parameter is the event type (0x09 = note on, 0x08 = note off).
 // Second parameter is note-on/note-off, combined with the channel.

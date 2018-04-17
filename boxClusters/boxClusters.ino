@@ -29,7 +29,8 @@
 
 #define PIN 2
 //#define BAUD_RATE     (460800)
-#define BAUD_RATE     (115200)
+//#define BAUD_RATE     (115200) //was 115200, had to change for wav
+#define BAUD_RATE     (57600) //was 115200, had to change for wav
 
 
 // DEBUG_SERIAL and the rest must be __false__ for production!
@@ -47,10 +48,10 @@
 #define ATTRACTOR_FADE_IN_TIME        (0.7f)  //how long it takes to fade back in.  Speed of animations are controlled in color.h
 
 // When hit: Effects fade out at this rate:
-#define BRIGHTNESS_DECAY_RATE    (200.0f)   // Lower == faster decay
+#define BRIGHTNESS_DECAY_RATE    (100.0f)   // Lower == faster decay
 
 //uint16_t ledArray[]={0,15,30,45,60,75,90,105};  // PWLF boxes
-uint16_t ledArray[]={0,62,122,182,242,302,362,431};  //for TX final designed board: this specifies the number of LEDs in each strip.
+uint16_t ledArray[]={0,62,124,186,248,310,372,434};  //for TX final designed board: this specifies the number of LEDs in each strip.
 //uint16_t ledArray[]={0,1,2,3,4,5,6,7};  //test board: this specifies the number of LEDs in each strip.
 
 // LED strip length: Match the number of LEDs specified in ledArray[]..
@@ -58,14 +59,14 @@ Adafruit_NeoPixel strip = Adafruit_NeoPixel(ledArray[BOXES], PIN, NEO_GRB + NEO_
 
 // this fixes all the piezo locations for each box. They were randomly connected and have to be asigned to the correct box
 int box[CLUSTERS][BOXES] = {
-  {2,1,0,9,8,7,6}, //cluster 0  ground out pin 9, just to keep code logic straight
-  {2,1,0,9,8,7,6},  //cluster 1  //only 4 boards used in the TX version.  will ground out pin 9 ??
-  {0,1,2,3,6,7,8},  //cluster 2
-  {0,1,2,3,6,7,8},  //cluster 3
-  {0,1,2,3,6,7,8},  //cluster 4
-  {0,1,2,3,6,7,8},  //cluster 5  //should I comment out the unused boards/hit values/etc.?  or just leave it be.. ??
-  {0,1,2,3,6,7,8},  //cluster 6
-  {0,1,2,3,6,7,8},  //cluster 7
+  {3,2,1,0,9,8,7}, //cluster 0  ground out pin 9, just to keep code logic straight
+  {3,2,1,0,9,8,7},  //cluster 1  //only 4 boards used in the TX version.  will ground out pin 9 ??
+  {0,1,2,3,9,8,7},  //cluster 2
+  {0,1,2,3,9,8,7},  //cluster 3
+  {0,1,2,3,9,8,7},  //cluster 4
+  {0,1,2,3,9,8,7},  //cluster 5  //should I comment out the unused boards/hit values/etc.?  or just leave it be.. ??
+  {0,1,2,3,9,8,7},  //cluster 6
+  {0,1,2,3,9,8,7},  //cluster 7
   {0,1,2,3,6,7,8},  //cluster 8
   {0,1,2,3,6,7,8},  //cluster 9
   {0,1,2,3,6,7,8},  //cluster 10
