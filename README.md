@@ -22,3 +22,7 @@ Light bars <br>
 4 PCBs total for 28 keys <br>
 - 62 WS2812 leds per strip <br>
 - several piezos wired in paralell per strip <br>
+
+Future update: use IR led and phototransistor with recessed housing to detect beam break.
+https://www.taydaelectronics.com/leds/infrared-led/infrared-led-940nm-5mm-tsal7400.html
+https://www.taydaelectronics.com/tops-030-photo-transistor-900nm-3mm-radial-tops-030tb2.html
